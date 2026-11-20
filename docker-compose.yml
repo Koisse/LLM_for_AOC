@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: oil_db
+    environment:
+      POSTGRES_USER: oil_user
+      POSTGRES_PASSWORD: oil_password
+      POSTGRES_DB: oil_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oil_user -d oil_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: oil_app
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://oil_user:oil_password@db:5432/oil_db
+    volumes:
+      - .:/app  # Изменения в коде на компьютере сразу видны в контейнере
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
